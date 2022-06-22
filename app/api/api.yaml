@@ -1,0 +1,88 @@
+openapi: 3.0.0
+info:
+  title: Services APi
+  description: An api providing consumers with the ability to request the services resource. Searching, querying, and pagination mechanisms are supported
+  version: 1.0.0
+servers:
+  - url: https://qa.api.kong.com/v1
+    description: QA deployment of the service
+  - url: https://api.kong.com/v1
+    description: Production environment for cloud service
+paths:
+  /services/{idService}:
+    get:
+      summary: Returns a specific service given the id of that service
+      description: Returns a service
+      parameters:
+        - name: "idService"
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':    # status code
+          description: "A service specified by the id of the request"
+          content:
+            application/json:
+              schema: 
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Service"
+  /services:
+    get:
+      summary: Returns a list of services
+      description: Returns a list of services based on the query parameters specified in the request
+      parameters:
+        - name: "sortOrder"
+          in: query
+          description: "The order in which to sort the results based on the name. Default is ascending alphanumeric order"
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: "searchQuery"
+          in: query
+          description: "The query the consumer is searching for. The requirements are vague so I would discuss the search capabilities with the product team and stakeholders"
+          schema:
+            type: string
+      responses:
+        '200':    # status code
+          description: "An object containing a set of services based on the requested parameters"
+          content:
+            application/json:
+              schema: 
+                type: array
+                items: 
+                  $ref: "#/components/schemas/GetServicesResponse"
+components:
+  schemas:
+    GetServicesResponse:
+      type: object
+      properties:
+        count:
+          type: number
+          format: integer
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Unique identifier for the service"
+        name:
+          type: string
+          description: "The name given to the service"
+        description:
+          type: string
+          description: "A brief description of the service"
+        versionCount:
+          type: number
+          format: integer
+          description: "The number of versions the service has"
+        versions:
+          type: array
+          items:
+            type: string
