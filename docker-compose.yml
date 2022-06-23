@@ -1,15 +1,18 @@
 version: '3.1'
 services:
-  # mongo:
-  #   image: mongo
-  #   restart: always
-  #   environment: 
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: test
+  mongo:
+    build: ./database
+    image: kong-mongo
+    restart: always
+    ports:
+      - 27017:27017
+    environment: 
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: test
   app:
     build: ./app
     image: kong-service
     ports:
-      - 8080:8080
+      - 8000:8000
     environment:
-      MONGODB_URI: 'mongodb://root:test@mongo:27017/?maxPoolSize=20&w=majority'
+      MONGODB_URI: 'mongodb://root:test@kong-mongo:27017/?maxPoolSize=20&w=majority'
