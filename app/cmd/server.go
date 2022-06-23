@@ -1,37 +1,31 @@
 package main
 
 import (
-    "fmt"
     "github.com/gorilla/mux"
     "net/http"
     "log"
-    // "encoding/json"
+    "github.com/kderosha/KongServices/app/db"
+    "github.com/kderosha/KongServices/app/api"
 )
 
 func main(){
     // Regester observability and logging framework
-    fmt.Println("Starting service");
-    fmt.Println("Registering Handlers");
+    log.Println("Starting service");
+    log.Println("Registering database");
+    db := db.NewDb();
+
+    log.Println("Registering API")
+    servicesApi := api.NewApi(db)
+
+    log.Println("Registering Handlers");
     router := mux.NewRouter();
-    router.HandleFunc("/", WelcomeHandler)
-    router.HandleFunc("/services", GetServices).Methods("GET");
-    router.HandleFunc("/services", PostServices).Methods("POST");
+    router.HandleFunc("/", servicesApi.WelcomeHandler).Methods("GET")
+    router.HandleFunc("/services", servicesApi.GetServices).Methods("GET");
+    router.HandleFunc("/services", servicesApi.PostServices).Methods("POST");
+    log.Println("Starting service")
     srv := &http.Server{
         Handler: router,
-        Addr:    "127.0.0.1:8080",
+        Addr: "127.0.0.1:8000",
     }
     log.Fatal(srv.ListenAndServe());
-}
-
-func WelcomeHandler(w http.ResponseWriter, r *http.Request){
-    fmt.Fprintf(w, "Hello there user");
-    return;
-}
-
-func GetServices(w http.ResponseWriter, r *http.Request){
-    return
-}
-
-func PostServices(w http.ResponseWriter, r *http.Request){
-    return
 }
