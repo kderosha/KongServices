@@ -4,26 +4,20 @@ import (
     "github.com/gorilla/mux"
     "net/http"
     "log"
-    "github.com/kderosha/KongServices/app/db"
     "github.com/kderosha/KongServices/app/api"
 )
 
 func main(){
-    // Regester observability and logging framework
     log.Println("Starting service");
-    log.Println("Registering database");
-    db := db.NewDb();
+    log.Println("Register some observability mechanisms")
 
-    log.Println("Registering API")
-    servicesApi := api.NewApi(db)
-
-    log.Println("Registering Handlers");
     router := mux.NewRouter();
-    router.HandleFunc("/", servicesApi.WelcomeHandler).Methods("GET")
-    router.HandleFunc("/services", servicesApi.GetServices).Methods("GET");
-    router.HandleFunc("/services", servicesApi.PostServices).Methods("POST");
-    router.HandleFunc("/services/{idService}", servicesApi.GetServiceById).Methods("GET");
-    router.HandleFunc("/services/{idService}/versions", servicesApi.CreateVersion).Methods("POST");
+    router.Use(authMiddleware)
+    // Configure CORS for our front end application.
+
+    // Register the new api with the database.
+    log.Println("Registering API")
+    api.AssignHandlers(router)
 
     log.Println("Starting server")
     srv := &http.Server{
@@ -31,4 +25,11 @@ func main(){
         Addr: ":8000",
     }
     log.Fatal(srv.ListenAndServe());
+}
+
+func authMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+        log.Println("Perform authentication using OAuth2 and OIDC")
+        next.ServeHTTP(w, r)
+    })
 }

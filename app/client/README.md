@@ -1,0 +1,1 @@
+Create a golang package that can interact with the api.

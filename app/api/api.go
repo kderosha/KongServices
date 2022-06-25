@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+    "github.com/kderosha/KongServices/app/db"
 	"log"
 	"encoding/json"
 	"context"
@@ -24,18 +25,26 @@ type CreateVersion struct{
 }
 
 type Api struct{
-	db *mongo.Client
+	dbClient *mongo.Client
 }
 
-func NewApi(db *mongo.Client)  *Api{
-	return &Api{
-		db: db,
+func AssignHandlers(router *mux.Router) {
+    // Return a new router
+    // Define routes and handlers.
+    log.Println("Registering Handlers");
+	servicesApi := &Api{
+		dbClient: db.NewDb(),
 	}
+    router.HandleFunc("/healthz", servicesApi.WelcomeHandler).Methods("GET")
+    router.HandleFunc("/services", servicesApi.GetServices).Methods("GET");
+    router.HandleFunc("/services", servicesApi.PostServices).Methods("POST");
+    router.HandleFunc("/services/{idService}", servicesApi.GetServiceById).Methods("GET");
+    router.HandleFunc("/services/{idService}/versions", servicesApi.CreateVersion).Methods("POST");
 }
 
+// Simple welcome/health handler that can be used to test status of the service.
 func (api *Api) WelcomeHandler(w http.ResponseWriter, r *http.Request){
 	log.Println("Welcome endpoint");
-
     fmt.Fprintf(w, "Hello there user");
     return;
 }
@@ -59,7 +68,7 @@ func (api *Api) CreateVersion(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	collection := api.db.Database("KongServices").Collection("services")
+	collection := api.dbClient.Database("KongServices").Collection("services")
 	if err != nil {
 		log.Println("Unable to get collection");
 	}
@@ -122,7 +131,7 @@ func (api *Api) PostServices(w http.ResponseWriter, r *http.Request){
 
 	// store the service in the db, could create a new package for repository layer and use a ORM entity framework.
 	log.Println("Inserting document into the db: ", service)
-	servicesCollection := api.db.Database("KongServices").Collection("services")
+	servicesCollection := api.dbClient.Database("KongServices").Collection("services")
 	resultSet, err := servicesCollection.InsertOne(context.TODO(), service)
 	if err != nil {
 		log.Fatal(err)
@@ -141,7 +150,7 @@ func (api *Api) PostServices(w http.ResponseWriter, r *http.Request){
 
 func (api *Api) getService(idService primitive.ObjectID) (*Service, error) {
 	// Make query to database in order to retrieve the service given the id.
-	collection := api.db.Database("KongServices").Collection("services")
+	collection := api.dbClient.Database("KongServices").Collection("services")
 
 	var returnService *Service
 	err := collection.FindOne(context.TODO(), bson.D{{"_id", idService}}).Decode(&returnService)
