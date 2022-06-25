@@ -22,6 +22,9 @@ func main(){
     router.HandleFunc("/", servicesApi.WelcomeHandler).Methods("GET")
     router.HandleFunc("/services", servicesApi.GetServices).Methods("GET");
     router.HandleFunc("/services", servicesApi.PostServices).Methods("POST");
+    router.HandleFunc("/services/{idService}", servicesApi.GetServiceById).Methods("GET");
+    router.HandleFunc("/services/{idService}/versions", servicesApi.CreateVersion).Methods("POST");
+
     log.Println("Starting server")
     srv := &http.Server{
         Handler: router,

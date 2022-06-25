@@ -9,25 +9,6 @@ servers:
   - url: https://api.kong.com/v1
     description: Production environment for cloud service
 paths:
-  /services/{idService}:
-    get:
-      summary: Returns a specific service given the id of that service
-      description: Returns a service
-      parameters:
-        - name: "idService"
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':    # status code
-          description: "A service specified by the id of the request"
-          content:
-            application/json:
-              schema: 
-                type: array
-                items: 
-                  $ref: "#/components/schemas/Service"
   /services:
     get:
       summary: Returns a list of services
@@ -54,6 +35,53 @@ paths:
                 type: array
                 items: 
                   $ref: "#/components/schemas/GetServicesResponse"
+  /services:
+    post:
+      summary: Creates a new service
+      description: Creates a new service with the request body json
+      requestBody:
+        
+      responses:
+        '201':    # status code
+          description: "A service was created with the definition given"
+          content:
+            application/json:
+              schema: 
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Service"
+  /services/{idService}/version:
+    post:
+      summary: Create a new version of the service
+      description: Creates a new version on the service defined by idService path parameter
+      paramaters:
+        - name: "idService"
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: "The version has been added to the service"
+  /services/{idService}:
+    get:
+      summary: Returns a specific service given the id of that service
+      description: Returns a service
+      parameters:
+        - name: "idService"
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':    # status code
+          description: "A service specified by the id of the request"
+          content:
+            application/json:
+              schema: 
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Service"
 components:
   schemas:
     GetServicesResponse:
