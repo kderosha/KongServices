@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
     "github.com/kderosha/KongServices/app/db"
@@ -58,6 +59,10 @@ func (api *Api) WelcomeHandler(w http.ResponseWriter, r *http.Request){
     return;
 }
 
+/// Query the collection of services based on parameters described by the api.yaml for the GET /services endpoint
+/// Query parameters
+/// 	sort: string, possible options include [asc, desc]
+/// 	name: string applied to an open ended regex to search on the name property
 func (api *Api) GetServices(w http.ResponseWriter, r *http.Request){
 	query := r.URL.Query()
 
@@ -66,14 +71,25 @@ func (api *Api) GetServices(w http.ResponseWriter, r *http.Request){
 
 	// Get the name query parameter
 	nameSearch := query.Get("name")
+	sort := query.Get("sort")
+	findOptions := options.Find()
 	// If the name parameter was included in the request. We add it to the database query
 	if nameSearch != "" {
 		databaseQuery["name"] = bson.D{{"$regex", ".*" + nameSearch + ".*"}}
 	}
+	// Based on the sort=1,-1 query parameter evaluate applying a sort to the query
+	if sort == "asc" {
+		findOptions.SetSort(bson.D{{ "name", 1}})
+	} else if sort == "desc"{
+		findOptions.SetSort(bson.D{{ "name", -1}})
+	}
 
 	collection := api.dbClient.Database("KongServices").Collection("services")
 	// Search the mongo collection for our database query
-	cursor, err := collection.Find(context.TODO(), databaseQuery)
+	cursor, err := collection.Find(
+		context.TODO(), // TODO: evaluate context of the find operation
+		databaseQuery,	// query formed from query parameters on the api
+		findOptions) 	// Options considered when searching for documents
 	log.Println("searched for collection on ", databaseQuery)
 
 	// Define an array of services

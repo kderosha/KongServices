@@ -14,7 +14,7 @@ paths:
       summary: Returns a list of services
       description: Returns a list of services based on the query parameters specified in the request
       parameters:
-        - name: "sortOrder"
+        - name: "sort"
           in: query
           description: "The order in which to sort the results based on the name. Default is ascending alphanumeric order"
           required: false

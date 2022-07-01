@@ -1,8 +1,7 @@
 version: '3.1'
 services:
   kongmongo:
-    build: ./database
-    image: kong-mongo
+    image: mongo:4.2.21
     restart: always
     ports:
       - 27017:27017
