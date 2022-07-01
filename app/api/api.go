@@ -24,6 +24,14 @@ type CreateVersion struct{
 	Version string `json:"version"`
 }
 
+type ServicesResponse struct{
+	Services []Service `json:"services"`
+}
+
+type VersionsResponse struct{
+	Versions []string `json:"versions"`
+}
+
 type Api struct{
 	dbClient *mongo.Client
 }
@@ -40,6 +48,7 @@ func AssignHandlers(router *mux.Router) {
     router.HandleFunc("/services", servicesApi.PostServices).Methods("POST");
     router.HandleFunc("/services/{idService}", servicesApi.GetServiceById).Methods("GET");
     router.HandleFunc("/services/{idService}/versions", servicesApi.CreateVersion).Methods("POST");
+    router.HandleFunc("/services/{idService}/versions", servicesApi.GetServiceVersions).Methods("GET");
 }
 
 // Simple welcome/health handler that can be used to test status of the service.
@@ -50,7 +59,41 @@ func (api *Api) WelcomeHandler(w http.ResponseWriter, r *http.Request){
 }
 
 func (api *Api) GetServices(w http.ResponseWriter, r *http.Request){
-    return
+	query := r.URL.Query()
+
+	// Define a bson map[string]interface{} to hold the query we will be building to send to the db
+	var databaseQuery bson.M = make(bson.M)
+
+	// Get the name query parameter
+	nameSearch := query.Get("name")
+	// If the name parameter was included in the request. We add it to the database query
+	if nameSearch != "" {
+		databaseQuery["name"] = bson.D{{"$regex", ".*" + nameSearch + ".*"}}
+	}
+
+	collection := api.dbClient.Database("KongServices").Collection("services")
+	// Search the mongo collection for our database query
+	cursor, err := collection.Find(context.TODO(), databaseQuery)
+	log.Println("searched for collection on ", databaseQuery)
+
+	// Define an array of services
+	for cursor.Next(context.TODO()) {
+		var service Service
+		cursor.Decode(&service)
+		log.Println(service)
+	}
+	var services []Service
+	if err = cursor.All(context.TODO(), &services); err != nil {
+		panic(err)
+	}
+	log.Println(services)
+	var response *ServicesResponse = &ServicesResponse{
+		Services: services,
+	}
+
+	// write the array of services to response along with any other information needed
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func (api *Api) CreateVersion(w http.ResponseWriter, r *http.Request){
@@ -105,6 +148,31 @@ func (api *Api) GetServiceById(w http.ResponseWriter, r *http.Request){
 	service, err := api.getService(serviceObjectId)
 	if err != nil {
 
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(service)
+	return;
+}
+
+func (api *Api) GetServiceVersions(w http.ResponseWriter, r *http.Request){
+	// Get the service id from the path variable
+	params := mux.Vars(r)
+	idService := params["idService"]
+	log.Println("Received idService: ", idService)
+
+	serviceObjectId, err := primitive.ObjectIDFromHex(idService)
+	if err != nil {
+		log.Println("Unable to process id")
+		return
+	}
+
+
+	// Else we write the service to the response as a json
+	service, err := api.getService(serviceObjectId)
+	if err != nil {
+		panic(err)
 		return
 	}
 

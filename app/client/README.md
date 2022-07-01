@@ -1,1 +1,1 @@
-Create a golang package that can interact with the api.
+Create a golang SDK package that serves as the client for interacting with the api.
